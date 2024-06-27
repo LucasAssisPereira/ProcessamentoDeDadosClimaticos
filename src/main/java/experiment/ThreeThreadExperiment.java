@@ -1,116 +1,63 @@
 package experiment;
 
 import model.Capital;
+import model.WeatherData;
 import service.WeatherAPI;
 import service.WeatherProcessor;
-import model.WeatherData;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static model.Capital.*;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ThreeThreadExperiment {
 
+    private final WeatherAPI weatherAPI;
+    private final WeatherProcessor weatherProcessor;
+
+    public ThreeThreadExperiment() {
+        this.weatherAPI = new WeatherAPI();
+        this.weatherProcessor = new WeatherProcessor();
+    }
+
     public void runExperiment() {
-        List<Capital> capitals = Arrays.asList(values());
-        WeatherAPI weatherAPI = new WeatherAPI();
-        WeatherProcessor weatherProcessor = new WeatherProcessor();
+        System.out.println("Running ThreeThreadExperiment...");
 
-        String[] headers = {"Capital", "Min Temp (°C)", "Max Temp (°C)", "Avg Temp (°C)"};
-        String[][] data = new String[capitals.size()][headers.length];
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        for (Capital capital : Capital.values()) {
+            executor.submit(() -> {
+                try {
+                    WeatherData weatherData = weatherAPI.fetchWeatherData(capital);
+                    Map<LocalDate, double[]> dailyMinMaxTemperatures = weatherProcessor.getDailyMinAndMaxTemperaturesForJanuary(weatherData);
 
-        int partitionSize = capitals.size() / 3;
-        Thread[] threads = new Thread[3];
+                    printTable(capital, dailyMinMaxTemperatures);
 
-        for (int i = 0; i < 3; i++) {
-            final int start = i * partitionSize;
-            final int end = (i == 2) ? capitals.size() : (i + 1) * partitionSize;
-            threads[i] = new Thread(() -> processCapitals(weatherAPI, weatherProcessor, capitals.subList(start, end), data, start));
+                } catch (Exception e) {
+                    System.err.println("Erro ao processar dados para " + capital.name() + ": " + e.getMessage());
+                }
+            });
         }
 
-        for (Thread thread : threads) {
-            thread.start();
+        executor.shutdown();
+        while (!executor.isTerminated()) {
         }
 
-        for (Thread thread : threads) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Imprimir a tabela
-        printTable(headers, data);
+        System.out.println("ThreeThreadExperiment concluído.");
     }
 
-    private void processCapitals(WeatherAPI weatherAPI, WeatherProcessor weatherProcessor, List<Capital> capitals, String[][] data, int offset) {
-        int index = offset;
-        for (Capital capital : capitals) {
-            try {
-                // Obter dados do clima para a capital
-                WeatherData weatherData = weatherAPI.fetchWeatherData(capital);
+    private void printTable(Capital capital, Map<LocalDate, double[]> dailyMinMaxTemperatures) {
+        System.out.println("Temperaturas para " + capital.name());
+        System.out.println("---------------------------------------------------");
+        System.out.println("|    Data    | Min Temp (°C) | Max Temp (°C) |");
+        System.out.println("---------------------------------------------------");
 
-                // Processar dados do clima
-                double minTemp = weatherProcessor.calculateMinTemperature(weatherData);
-                double maxTemp = weatherProcessor.calculateMaxTemperature(weatherData);
-                double avgTemp = weatherProcessor.calculateAverageTemperature(weatherData);
-
-                // Armazenar os dados na tabela
-                data[index][0] = capital.name();
-                data[index][1] = String.format("%.2f", minTemp);
-                data[index][2] = String.format("%.2f", maxTemp);
-                data[index][3] = String.format("%.2f", avgTemp);
-                index++;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        for (Map.Entry<LocalDate, double[]> entry : dailyMinMaxTemperatures.entrySet()) {
+            String date = String.valueOf(entry.getKey());
+            double[] minMax = entry.getValue();
+            System.out.printf("| %10s | %13.2f | %13.2f |%n", date, minMax[0], minMax[1]);
         }
+
+        System.out.println("---------------------------------------------------\n");
     }
 
-    private void printTable(String[] headers, String[][] data) {
-        // Calcular a largura máxima de cada coluna
-        int[] columnWidths = new int[headers.length];
-        for (int i = 0; i < headers.length; i++) {
-            columnWidths[i] = headers[i].length();
-        }
-        for (String[] row : data) {
-            for (int i = 0; i < row.length; i++) {
-                columnWidths[i] = Math.max(columnWidths[i], row[i].length());
-            }
-        }
-
-        // Imprimir o cabeçalho
-        printRow(headers, columnWidths);
-        printSeparator(columnWidths);
-
-        // Imprimir as linhas de dados
-        for (String[] row : data) {
-            printRow(row, columnWidths);
-        }
-    }
-
-    private void printRow(String[] row, int[] columnWidths) {
-        StringBuilder rowBuilder = new StringBuilder();
-        for (int i = 0; i < row.length; i++) {
-            rowBuilder.append(String.format(" %-" + columnWidths[i] + "s ", row[i]));
-            if (i < row.length - 1) {
-                rowBuilder.append("|");
-            }
-        }
-        System.out.println(rowBuilder.toString());
-    }
-
-    private void printSeparator(int[] columnWidths) {
-        StringBuilder separatorBuilder = new StringBuilder();
-        for (int width : columnWidths) {
-            for (int i = 0; i < width + 2; i++) {
-                separatorBuilder.append("-");
-            }
-            separatorBuilder.append("+");
-        }
-        separatorBuilder.setLength(separatorBuilder.length() - 1);
-        System.out.println(separatorBuilder.toString());
-    }
 }

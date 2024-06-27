@@ -20,11 +20,14 @@ public class Main {
             choice = scanner.nextInt();
 
             switch (choice) {
+
                 case 1:
+
                     System.out.println("Iniciando experimento com 1 thread...");
                     SingleThreadExperiment singleThreadExperiment = new SingleThreadExperiment();
                     singleThreadExperiment.runExperiment();
                     break;
+
                 case 2:
                     System.out.println("Iniciando experimento com 3 threads...");
                     ThreeThreadExperiment threeThreadExperiment = new ThreeThreadExperiment();
