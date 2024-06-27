@@ -1,5 +1,7 @@
 package service;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import model.Capital;
 import model.WeatherData;
 import com.google.gson.Gson;
@@ -11,24 +13,21 @@ import java.net.URL;
 
 public class WeatherAPI {
 
-    private static final String API_URL = "https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&hourly=temperature_2m";
+    private static final String API_URL = "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&hourly=temperature_2m";
 
     public WeatherData fetchWeatherData(Capital capital) throws Exception {
-        String urlString = String.format(API_URL, capital.getLatitude(), capital.getLongitude());
-        URL url = new URL(urlString);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
+        String apiUrl = String.format(API_URL, capital.getLatitude(), capital.getLongitude());
+        URL url = new URL(apiUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder content = new StringBuilder();
-        String inputLine;
-        while ((inputLine = in.readLine()) != null) {
-            content.append(inputLine);
+        if (connection.getResponseCode() == 200) {
+            InputStreamReader reader = new InputStreamReader(connection.getInputStream());
+            JsonObject jsonResponse = JsonParser.parseReader(reader).getAsJsonObject();
+            Gson gson = new Gson();
+            return gson.fromJson(jsonResponse, WeatherData.class);
+        } else {
+            throw new Exception("Erro ao acessar a API: " + connection.getResponseMessage());
         }
-        in.close();
-        conn.disconnect();
-
-        Gson gson = new Gson();
-        return gson.fromJson(content.toString(), WeatherData.class);
     }
 }
