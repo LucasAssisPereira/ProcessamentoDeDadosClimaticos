@@ -20,7 +20,7 @@ public class SingleThreadExperiment {
 
     public void runExperiment() {
         System.out.println("Running SingleThreadExperiment...");
-
+        long startTime = System.currentTimeMillis();
         for (Capital capital : Capital.values()) {
             try {
                 WeatherData weatherData = weatherAPI.fetchWeatherData(capital);
@@ -32,7 +32,8 @@ public class SingleThreadExperiment {
                 System.err.println("Erro ao processar dados para " + capital.name() + ": " + e.getMessage());
             }
         }
-
+        long endTime = System.currentTimeMillis();
+        System.out.println("Tempo de execucao: " + (endTime - startTime) + "ms");
         System.out.println("SingleThreadExperiment concluído.");
     }
 
