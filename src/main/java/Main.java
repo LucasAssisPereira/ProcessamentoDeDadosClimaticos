@@ -22,23 +22,19 @@ public class Main {
             switch (choice) {
 
                 case 1:
-                    SingleThreadExperiment singleThreadExperiment = new SingleThreadExperiment();
-                    singleThreadExperiment.runExperiment();
+                    new SingleThreadExperiment().runExperiment();
                     break;
 
                 case 2:
-                    ThreeThreadExperiment threeThreadExperiment = new ThreeThreadExperiment();
-                    threeThreadExperiment.runExperiment();
+                    new ThreeThreadExperiment().runExperiment();
                     break;
 
                 case 3:
-                    NineThreadExperiment nineThreadExperiment = new NineThreadExperiment();
-                    nineThreadExperiment.runExperiment();
+                    new NineThreadExperiment().runExperiment();
                     break;
 
                 case 4:
-                    TwentySevenThreadExperiment twentySevenThreadExperiment = new TwentySevenThreadExperiment();
-                    twentySevenThreadExperiment.runExperiment();
+                    new TwentySevenThreadExperiment().runExperiment();
                     break;
 
                 case 5:
